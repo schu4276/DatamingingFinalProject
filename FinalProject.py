@@ -8,6 +8,7 @@ Created on Fri Nov  6 12:02:40 2020
 import pandas as pd
 import matplotlib.pylab as plt
 
+
 # Defining dataset and exploring data
 UFO_df = pd.read_csv('/DataMining/lab2/complete.csv')
 low_memory=False
@@ -15,29 +16,36 @@ low_memory=False
 # Cleaning data, there are quite a few pieces missing from the data set, so this 
 # Needs to be addressed
 
-UFO_cleaned = UFO_df.drop(columns = ['duration (hours/min)', 'Unnamed: 11','country','comments','date posted','datetime'])
-UFO_cleaned = UFO_cleaned.dropna() # droping columns w/ NA values
+US_df = UFO_df.drop(columns = ['duration (hours/min)', 'Unnamed: 11','comments','date posted','datetime'])
+
+US_df.country = US_df[US_df.country == 'us']   
+
+
+US_df.country.value_counts()
+US_df = US_df.dropna() # droping columns w/ NA values
 
 # changing duration to numerical value
-UFO_cleaned = UFO_cleaned.rename(columns={'duration (seconds)': 'duration'}) 
-UFO_cleaned.duration =  UFO_cleaned.duration.astype('float64')
+US_df = US_df.rename(columns={'duration (seconds)': 'duration'}) 
+US_df.duration =  US_df.duration.astype('float64')
 
-UFO_cleaned.latitude
+US_df.latitude
 # getting rid of values that that were messed up/ invalid 
-UFO_cleaned = UFO_cleaned[~UFO_cleaned.latitude.str.contains('/')]
-UFO_cleaned = UFO_cleaned[~UFO_cleaned.latitude.str.contains('q')]
+US_df = US_df[~US_df.latitude.str.contains('/')]
+US_df = US_df[~US_df.latitude.str.contains('q')]
 
-UFO_cleaned.latitude = UFO_cleaned.latitude.astype('float64')
-
-
-UFO_cleaned = pd.get_dummies(UFO_cleaned, columns=['shape','state'], prefix_sep='_') 
+US_df.latitude = US_df.latitude.astype('float64')
  
-UFO_cleaned.info()
+US_df.info()
 
-#  Correlation table for quantative cereal data
+
+
+US_df = pd.get_dummies(US_df, columns=['shape'], prefix_sep='_') 
+US_df['combined'] = list(zip(US_df.latitude, US_df.longitude))
+
+## Correlation table for quantative cereal data
 import seaborn as sns;  # had to add this import
-## simple heatmap of correlations (without values)
-corr = UFO_cleaned.corr()
+# simple heatmap of correlations (without values)
+corr = US_df.corr()
 sns.heatmap(corr, xticklabels=corr.columns, yticklabels=corr.columns)
 # Change the colormap to a divergent scale and fix the range of the colormap
 sns.heatmap(corr, xticklabels=corr.columns, yticklabels=corr.columns, vmin=-1, vmax=1, cmap= "RdBu")
@@ -48,20 +56,22 @@ fig.set_size_inches(18, 18)
 sns.heatmap(corr, annot=False, fmt= ".1f", cmap= "RdBu", center=0, ax=ax)
 # darker and bluer means stronger correlation
 # used to visualize correlations and missing values
+plt.show()
 
 
 ## Multiple Linear Regression 
-UFO_cleaned_loc = UFO_cleaned.iloc[0:1000]
-UFO_cleaned_loc.info()
+US_df_loc = US_df.iloc[0:1000]
+US_df_loc.info()
+unwanted = ['city','country', 'latitude', 'longitude','state', 'combined']
 
-predictors = UFO_cleaned_loc.drop(columns=['duration', 'city'])
 print(predictors)
-outcome= UFO_cleaned_loc.duration
+outcome = ['latitude', 'longitude']
+
 
 from sklearn.model_selection import train_test_split
 
-X = predictors 
-y = UFO_cleaned_loc['duration']
+X = US_df_loc.drop(columns = unwanted) 
+y = US_df_loc['latitude']
 X.shape
 y.shape
 train_X, valid_X, train_y, valid_y = train_test_split(X,y, test_size=0.4, random_state=1)
@@ -72,6 +82,7 @@ UFO_lm.fit(train_X, train_y)
 
 # print coefficiient
 print(pd.DataFrame({'Predictor': X.columns, 'coefficient': UFO_lm.coef_}))
+US_df_loc
 
 from dmba import regressionSummary
 regressionSummary(train_y, UFO_lm.predict(train_X))
