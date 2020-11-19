@@ -97,15 +97,13 @@ train_X, valid_X, train_y, valid_y = train_test_split(X,y, test_size=0.4, random
 # print coefficients
 
 
-
-
 # print performance measures (training data)
 from sklearn.linear_model import LinearRegression, Lasso, Ridge, LassoCV, BayesianRidge
 from sklearn.metrics import roc_curve, auc
 import statsmodels.formula.api as sm
 import math
 
-from dmba import regressionSummary, exhaustive_search, classificationSummary
+from dmba import regressionSummary, exhaustive_search
 from dmba import backward_elimination, forward_selection, stepwise_selection
 from dmba import adjusted_r2_score, AIC_score, BIC_score
 from dmba import liftChart, gainsChart
@@ -288,7 +286,6 @@ fig.show()
 ## Word Cloud
 import matplotlib.pyplot as pPlot
 from wordcloud import WordCloud, STOPWORDS
-import numpy as npy
 from PIL import Image
 
 # Start with one review:
@@ -300,4 +297,57 @@ wordcloud = WordCloud().generate(text)
 plt.imshow(wordcloud, interpolation='bilinear')
 plt.axis("off")
 plt.show()
+
+
+## Naive Bayes 
+from sklearn.naive_bayes import MultinomialNB
+from dmba import classificationSummary
+'''
+'''
+
+predictors = ['UFO_shape_changed', 'UFO_shape_changing', 'UFO_shape_chevron',
+       'UFO_shape_cigar', 'UFO_shape_circle', 'UFO_shape_cone',
+       'UFO_shape_crescent', 'UFO_shape_cross', 'UFO_shape_cylinder',
+       'UFO_shape_delta', 'UFO_shape_diamond', 'UFO_shape_disk',
+       'UFO_shape_egg', 'UFO_shape_fireball', 'UFO_shape_flare',
+       'UFO_shape_flash', 'UFO_shape_formation', 'UFO_shape_hexagon',
+       'UFO_shape_light', 'UFO_shape_other', 'UFO_shape_oval',
+       'UFO_shape_pyramid', 'UFO_shape_rectangle', 'UFO_shape_round',
+       'UFO_shape_sphere', 'UFO_shape_teardrop', 'UFO_shape_triangle',
+       'UFO_shape_unknown', 'duration']
+outcome = 'state'
+
+NB_x = US_df[predictors]
+NB_y = US_df['state'].astype('category')
+classes = list(NB_y.cat.categories)
+
+# split into training and validation sets 
+x_train, x_valid, y_train, y_valid = train_test_split(NB_x, NB_y, test_size=0.40, random_state=1)
+
+# now running the modeling 
+delays_nb = MultinomialNB(alpha= 0.01)
+delays_nb.fit(x_train, y_train)
+
+# predict probabilities
+predProb_train = delays_nb.predict_proba(x_train)
+predProb_valid = delays_nb.predict_proba(x_valid)
+
+# predicting the class membership
+y_valid_pred = delays_nb.predict(x_valid)
+
+# predicting the class membership
+y_train_pred = delays_nb.predict(x_train)
+
+# training confusion matrix 
+classificationSummary(y_train, y_train_pred, class_names=classes) 
+
+# validation confusion matrix 
+classificationSummary(y_valid, y_valid_pred, class_names=classes) 
+
+df = pd.DataFrame({'actual': 1 - y_valid.cat.codes, 'prob': predProb_valid[:, 0]})
+df = df.sort_values(by=['prob'], ascending=False).reset_index(drop=True)
+
+fig, ax = plt.subplots()
+fig.set_size_inches(4, 4)
+gainsChart(df.actual, ax=ax)
 
