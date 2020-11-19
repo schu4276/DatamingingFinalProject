@@ -246,12 +246,41 @@ fig = go.Figure(data=go.Choropleth(
     z = ufo_bystate, # Data to be color-coded
     locationmode = 'USA-states', # set of locations match entries in `locations`
     colorscale = 'Reds',
-    colorbar_title = "Number of UFO sighting",
+    colorbar_title = "UFO sighting",
 ))
 
 fig.update_layout(
     title_text = 'UFO sightings in US by states',
     geo_scope='usa', # limite map scope to USA
+)
+
+fig.show()
+
+# UFO sightings per 100,000 people in state
+state_population = np.asarray([738432, 4858979, 2978204, 6828065, 39144818, 5456574,
+                               3590886, 945934, 20271272, 10214860, 1431603,
+                               3123899, 1654930, 12859995, 6619680, 2911641, 4425092,
+                               4670724, 6794422, 6006401, 1329328, 9922576, 5489594,
+                               6083672, 2992333, 1032949, 10042802, 756927, 1896190,
+                               1330608, 8958013, 2085109, 2890845, 19795791, 11613423,
+                               3911338, 4028977, 12802503, 1056298, 4896146, 858469,
+                               6600299, 27469114, 2995919, 8382993, 626042, 7170351,
+                               5771337, 1844128, 586107])
+
+
+ufo_percapita = np.round(ufo_bystate / state_population * 100000, 2)
+
+fig = go.Figure(data=go.Choropleth(
+    locations = unique_states, # Spatial coordinates
+    z = ufo_percapita, # Data to be color-coded
+    locationmode = 'USA-states', # set of locations match entries in `locations`
+    colorscale = 'Reds',
+    colorbar_title = "UFO sighting per capita",
+))
+
+fig.update_layout(
+    title_text = 'UFO sightings in US per capita',
+    geo_scope='usa', # limits map scope to USA
 )
 
 fig.show()
