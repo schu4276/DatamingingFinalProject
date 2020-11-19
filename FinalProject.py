@@ -5,9 +5,10 @@ Created on Fri Nov  6 12:02:40 2020
 """
 
 import pandas as pd
+import numpy as np
 
 # Defining dataset and exploring data
-UFO_df = pd.read_csv('/DataMining/lab2/complete.csv',low_memory=False)
+UFO_df = pd.read_csv(r'UFO/complete.csv',low_memory=False)
 
 # To see all columns
 pd.set_option('display.max_columns', None)
@@ -58,7 +59,7 @@ US_df.iloc[5]
 US_df['combined'] = list((US_df.latitude - US_df.longitude))
 US_df.combined
 
-######### Correlation Table and Visualization #########
+######### Correlation #########
 
 import seaborn as sns
 import matplotlib.pylab as plt
@@ -223,7 +224,37 @@ for k in range(1,15):
 results = pd.DataFrame(results)
 print(results)
 
-### Creating Supporting Visuals
+#### Creating Supporting Visuals
+
+
+## UFO sightings in United States by State (not including Puerto Rico or DC)
+import plotly.io as pio
+pio.renderers.default = "browser"
+import plotly.graph_objects as go
+
+US_df2 = US_df[US_df['state'] != 'pr']
+US_df2 = US_df2[US_df2['state'] != 'dc']
+
+unique_states = US_df2.groupby('state').state.count().index
+unique_states = [x.upper() for x in unique_states]
+
+ufo_bystate = US_df2.groupby('state').state.count().values
+
+
+fig = go.Figure(data=go.Choropleth(
+    locations = unique_states, # Spatial coordinates
+    z = ufo_bystate, # Data to be color-coded
+    locationmode = 'USA-states', # set of locations match entries in `locations`
+    colorscale = 'Reds',
+    colorbar_title = "Number of UFO sighting",
+))
+
+fig.update_layout(
+    title_text = 'UFO sightings in US by states',
+    geo_scope='usa', # limite map scope to USA
+)
+
+fig.show()
 
 ## Word Cloud
 import matplotlib.pyplot as pPlot
@@ -240,3 +271,4 @@ wordcloud = WordCloud().generate(text)
 plt.imshow(wordcloud, interpolation='bilinear')
 plt.axis("off")
 plt.show()
+
