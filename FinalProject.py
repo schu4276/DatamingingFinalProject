@@ -1,14 +1,13 @@
 # -*- coding: utf-8 -*-
 """
 Created on Fri Nov  6 12:02:40 2020
-
 @author: Cassie Aaron Utkarsh
 """
 
 import pandas as pd
 
 # Defining dataset and exploring data
-UFO_df = pd.read_csv(r'UFO/complete.csv', low_memory=False)
+UFO_df = pd.read_csv('/DataMining/lab2/complete.csv',low_memory=False)
 
 # To see all columns
 pd.set_option('display.max_columns', None)
@@ -36,7 +35,6 @@ UFO_df.rename(columns={'duration (seconds)': 'duration', 'shape': 'UFO_shape'}, 
 UFO_df['duration'] = pd.to_numeric(UFO_df.duration)
 UFO_df['latitude'] = pd.to_numeric(UFO_df.latitude)
 
-UFO_df.info()
 
 # We are removing datetime for now, but really we might use it later.
 # Drop the duration column given in hours/min, since there is a column of duration in seconds.
@@ -56,8 +54,9 @@ US_df.country.value_counts()
 # Turn shapes into dummy variables
 US_df = pd.get_dummies(US_df, columns=['UFO_shape'], prefix_sep='_') 
 # Create a new column that combines latitude and longitude
-US_df['combined'] = list(zip(US_df.latitude, US_df.longitude))
-
+US_df.iloc[5]
+US_df['combined'] = list((US_df.latitude - US_df.longitude))
+US_df.combined
 
 ######### Correlation Table and Visualization #########
 
@@ -73,7 +72,7 @@ sns.heatmap(corr, xticklabels=corr.columns, yticklabels=corr.columns, vmin=-1, v
 
 # Include information about values 
 fig, ax = plt.subplots()
-fig.set_size_inches(18, 18)
+fig.set_size_inches(12, 12)
 sns.heatmap(corr, annot=False, fmt= ".1f", cmap= "RdBu", center=0, ax=ax)
 # darker and bluer means stronger correlation
 # used to visualize correlations and missing values
@@ -87,8 +86,10 @@ US_df_loc = US_df.iloc[0:1000]
 US_df_loc.info()
 unwanted = ['city','country', 'latitude', 'longitude','state', 'combined']
 
-X = US_df_loc.drop(columns = unwanted) 
-y = US_df_loc['longitude']
+
+X = US_df_loc.drop(columns = unwanted).astype(float) 
+X.info()
+y = US_df_loc['combined']
 X.shape
 y.shape
 train_X, valid_X, train_y, valid_y = train_test_split(X,y, test_size=0.4, random_state=1)
@@ -108,11 +109,9 @@ from dmba import backward_elimination, forward_selection, stepwise_selection
 from dmba import adjusted_r2_score, AIC_score, BIC_score
 from dmba import liftChart, gainsChart
 
-
 US_lm = LinearRegression()
 US_lm .fit(train_X, train_y)
 
-regressionSummary(train_y, US_lm.predict(train_X))
 
 def train_model(variables):
     if len(variables) == 0:
@@ -140,7 +139,7 @@ fig, axes = plt.subplots(nrows=1, ncols=2)
 ax = gainsChart(pred_v, ax=axes[0])
 ax.set_ylabel('Cumulative Price')
 ax.set_title('Cumulative Gains Chart')
-
+ 
 ax = liftChart(pred_v, ax=axes[1], labelBars=False)
 ax.set_ylabel('Lift')
 
@@ -148,16 +147,13 @@ plt.tight_layout()
 plt.show()
 
 
-## Multiple Linear Regression With Seperate Lat and Long
+## Multiple Linear Regression With Combined Lat and Long
 US_df_loc = US_df.iloc[0:1000]
 
-
 #outcome = ['latitude']
-outcome = ['longitude']
-
-
+outcome = ['combined']
 X = US_df_loc[best_variables]
-y = US_df_loc['latitude']
+y = US_df_loc['combined']
 X.shape
 y.shape
 train_X, valid_X, train_y, valid_y = train_test_split(X,y, test_size=0.4, random_state=1)
@@ -166,13 +162,9 @@ UFO_lm = LinearRegression()
 UFO_lm.fit(train_X, train_y)
 
 # print coefficiient
-print(pd.DataFrame({'Predictor': X.columns, 'coefficient': UFO_lm.coef_}))
-US_df_loc
-
 regressionSummary(train_y, UFO_lm.predict(train_X))
 
 ## Using Nearest Neighbor
-US_df.shape_changing
 # print coefficients
 from sklearn.neighbors import KNeighborsClassifier 
 from sklearn.metrics import accuracy_score
@@ -180,38 +172,44 @@ from sklearn import preprocessing
 from sklearn.neighbors import NearestNeighbors
 
 # Transform the full dataset
-UFO_df = pd.read_csv('/DataMining/lab2/complete.csv',low_memory=False)
+US_df['Number'] = US_df.index+1
+US_df
 trainData, validData = train_test_split(US_df, test_size = 0.4, random_state = 1)
 
 scaler = preprocessing.StandardScaler()
-scaler.fit(trainData[['shape_changing', 'duration']])
+scaler.fit(trainData[best_variables])
 
 # Transforming dataset
-Norm = pd.concat([pd.DataFrame(scaler.transform(US_df[['shape_changing', 'duration']]), 
-                               columns=['duration','shape_changing']), 
-                  US_df[['latitude', 'longitude']]], axis=1)
+Norm = pd.concat([pd.DataFrame(scaler.transform(US_df[best_variables]), 
+                               columns=['zUFO_shape_fireball','zUFO_shape_disk', 'zUFO_shape_circle','zUFO_shape_teardrop']), 
+                  US_df[['combined','Number']]], axis=1)
 trainData.index
+Norm.index
+trainNorm = Norm.iloc[trainData.index/100]
+validNorm = Norm.iloc[validData.index/100]
 
-trainNorm = Norm.iloc[trainData.index]
-validNorm = Norm.iloc[validData.index]
+newUFO = pd.DataFrame([{'UFO_shape_fireball': 0,
+ 'UFO_shape_disk':0,
+ 'UFO_shape_circle':1,
+ 'UFO_shape_teardrop':0}])
 
-newUFO = pd.DataFrame([{'duration': 300, 'shape_changing': 1}])
-
-newUFONorm = pd.DataFrame(scaler.transform(newUFO),columns=['duration','shape_changing'])
+newUFONorm = pd.DataFrame(scaler.transform(newUFO),columns=[best_variables])
 
 
 # Use k-nearest neighbor
-newUFO = pd.DataFrame([{'duration': 30, 'shape_changing':0 }])
+Norm.dropna()
 knn = NearestNeighbors(n_neighbors=3)
-knn.fir(trainNorm[['duration', 'shape_changing']])
+knn.fit(trainNorm[['zUFO_shape_fireball','zUFO_shape_disk','zUFO_shape_circle','zUFO_shape_teardrop']])
 distances, indicies = knn.kneighbors(newUFONorm)
 print(trainNorm.iloc[indicies[0], :])
 
+trainNorm = trainNorm.dropna()
+train_X = trainNorm[['zUFO_shape_fireball','zUFO_shape_disk','zUFO_shape_circle','zUFO_shape_teardrop']]
+train_y = trainNorm['combined'].astype(int)
+validNorm = validNorm.dropna()
+valid_X = validNorm[['zUFO_shape_fireball','zUFO_shape_disk','zUFO_shape_circle','zUFO_shape_teardrop']]
+valid_y = validNorm['combined'].astype(int)
 
-train_X = trainNorm[['shape_cigar','shape_disk','shape_circle','shape_changing', 'duration']]
-train_y = trainNorm['latiude']
-valid_X = validNorm[['shape_cigar', 'shape_disk','shape_circle','shape_changing','duration']]
-valid_y = validNorm['latiude']
 
 # Train a classifier for different values of K
 results = []
@@ -224,3 +222,21 @@ for k in range(1,15):
 # Convert results to a pandas df
 results = pd.DataFrame(results)
 print(results)
+
+### Creating Supporting Visuals
+
+## Word Cloud
+import matplotlib.pyplot as pPlot
+from wordcloud import WordCloud, STOPWORDS
+import numpy as npy
+from PIL import Image
+
+# Start with one review:
+text = " ".join(comments for comments in UFO_df.comments)
+# Create and generate a word cloud image:
+wordcloud = WordCloud().generate(text)
+
+# Display the generated image:
+plt.imshow(wordcloud, interpolation='bilinear')
+plt.axis("off")
+plt.show()
