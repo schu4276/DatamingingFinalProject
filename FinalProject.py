@@ -4,8 +4,23 @@ Created on Fri Nov  6 12:02:40 2020
 @author: Cassie Aaron Utkarsh
 """
 
-import pandas as pd
+############## Imports ##############
 import numpy as np
+import pandas as pd
+import seaborn as sns
+import matplotlib.pylab as plt
+from wordcloud import WordCloud, STOPWORDS
+
+from dmba import regressionSummary, stepwise_selection, AIC_score
+from dmba import liftChart, gainsChart, classificationSummary
+
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn import preprocessing
+from sklearn.neighbors import NearestNeighbors, KNeighborsClassifier 
+from sklearn.metrics import accuracy_score
+from sklearn.naive_bayes import MultinomialNB
+#####################################################
 
 # Defining dataset and exploring data
 UFO_df = pd.read_csv(r'UFO/complete.csv',low_memory=False)
@@ -44,7 +59,7 @@ UFO_df['latitude'] = pd.to_numeric(UFO_df.latitude)
 UFO_df_cleaned = UFO_df.drop(columns=['datetime', 'duration (hours/min)', 'comments', 'date posted'])
 
 
-######### Focusing on US UFO Sighting #########
+##################### Focusing on UFO Sighting in USA #####################
 
 # New Dataframe with just sighting in United States.
 US_df = UFO_df_cleaned[UFO_df_cleaned.country == 'us']   
@@ -60,10 +75,6 @@ US_df['combined'] = list((US_df.latitude - US_df.longitude))
 US_df.combined
 
 ######### Correlation #########
-
-import seaborn as sns
-import matplotlib.pylab as plt
-
 
 corr = US_df.corr() # correlation table
 # simple heatmap of correlations (without values)
@@ -81,7 +92,6 @@ plt.show()
 
 
 ######### Partitioning Data for Stepwise Regression #########
-from sklearn.model_selection import train_test_split
 
 US_df_loc = US_df.iloc[0:1000]
 US_df_loc.info()
@@ -98,16 +108,6 @@ train_X, valid_X, train_y, valid_y = train_test_split(X,y, test_size=0.4, random
 
 
 # print performance measures (training data)
-from sklearn.linear_model import LinearRegression, Lasso, Ridge, LassoCV, BayesianRidge
-from sklearn.metrics import roc_curve, auc
-import statsmodels.formula.api as sm
-import math
-
-from dmba import regressionSummary, exhaustive_search
-from dmba import backward_elimination, forward_selection, stepwise_selection
-from dmba import adjusted_r2_score, AIC_score, BIC_score
-from dmba import liftChart, gainsChart
-
 US_lm = LinearRegression()
 US_lm .fit(train_X, train_y)
 
@@ -164,11 +164,6 @@ UFO_lm.fit(train_X, train_y)
 regressionSummary(train_y, UFO_lm.predict(train_X))
 
 ## Using Nearest Neighbor
-# print coefficients
-from sklearn.neighbors import KNeighborsClassifier 
-from sklearn.metrics import accuracy_score
-from sklearn import preprocessing
-from sklearn.neighbors import NearestNeighbors
 
 # Transform the full dataset
 US_df['Number'] = US_df.index+1
@@ -283,10 +278,7 @@ fig.update_layout(
 
 fig.show()
 
-## Word Cloud
-import matplotlib.pyplot as pPlot
-from wordcloud import WordCloud, STOPWORDS
-from PIL import Image
+###### Word Cloud 
 
 # Start with one review:
 text = " ".join(comments for comments in UFO_df.comments)
@@ -299,11 +291,7 @@ plt.axis("off")
 plt.show()
 
 
-## Naive Bayes 
-from sklearn.naive_bayes import MultinomialNB
-from dmba import classificationSummary
-'''
-'''
+###### Naive Bayes 
 
 predictors = ['UFO_shape_changed', 'UFO_shape_changing', 'UFO_shape_chevron',
        'UFO_shape_cigar', 'UFO_shape_circle', 'UFO_shape_cone',
